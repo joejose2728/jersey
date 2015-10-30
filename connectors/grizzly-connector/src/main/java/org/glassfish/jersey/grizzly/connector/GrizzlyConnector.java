@@ -271,6 +271,7 @@ class GrizzlyConnector implements Connector {
         try {
             return grizzlyClient.executeRequest(connectorRequest, new AsyncHandler<Void>() {
                 private volatile HttpResponseStatus status = null;
+                private volatile HttpResponseHeaders headers = null;
 
                 @Override
                 public STATE onStatusReceived(final HttpResponseStatus responseStatus) throws Exception {
@@ -287,7 +288,7 @@ class GrizzlyConnector implements Connector {
                     HeaderUtils.checkHeaderChanges(clientHeadersSnapshot, request.getHeaders(),
                             GrizzlyConnector.this.getClass().getName());
 
-                    callback.response(translate(request, this.status, headers, entityStream));
+                    this.headers = headers;
                     return STATE.CONTINUE;
                 }
 
@@ -300,6 +301,7 @@ class GrizzlyConnector implements Connector {
                 @Override
                 public Void onCompleted() throws Exception {
                     entityStream.closeQueue();
+                    callback.response(translate(request, this.status, this.headers, entityStream));
                     return null;
                 }
 
